@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: teeworlds-openfng
+  namespace: teeworlds
+spec:
+  selector:
+    matchLabels:
+      app: teeworlds
+      mod: openfng
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: teeworlds
+        mod: openfng
+    spec:
+      containers:
+        - name: cadulis-api
+          image: tleviandier/teeworlds-basket
+          imagePullPolicy: Always
+          ports:
+            - name: teeworlds
+              containerPort: 8303
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: teeworlds-openfng
+  namespace: teeworlds
+  labels:
+    app: teeworlds
+    mod: openfng
+spec:
+  type: NodePort
+  ports:
+    - name: teeworlds
+      port: 8303
+      targetPort: teeworlds
+  selector:
+    app: teeworlds
+    mod: openfng

@@ -1,3 +1,12 @@
+---
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: teeworlds
+
+---
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -6,42 +15,50 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: teeworlds
-      mod: openfng
+      app: teeworlds-openfng
   replicas: 1
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
   template:
     metadata:
       labels:
-        app: teeworlds
-        mod: openfng
+        app: teeworlds-openfng
     spec:
       containers:
-        - name: cadulis-api
-          image: tleviandier/teeworlds-basket
+        - name: teeworlds
+          image: tleviandier/teeworlds-openfng:latest
           imagePullPolicy: Always
           ports:
             - name: teeworlds
               containerPort: 8303
+          # Resources limits
+          resources:
+            # limits is maximum allowed usage
+            limits:
+              cpu: 1000m
+              memory: 500Mi
+            # requests is used on pod creation : node cannot exceed the sum of requests
+            requests:
+              cpu: 10m
+              memory: 10Mi
+          lifecycle:
+            postStart:
+              exec:
+                command: ["sh","-c","curl -X POST --max-time 5 -H 'Authorization: Basic YWRtaW46TDJSbERSNmY=' https://therapy.bixev.com/app/teeworlds-openfng/check;echo;"]
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: teeworlds-openfng
   namespace: teeworlds
-  labels:
-    app: teeworlds
-    mod: openfng
 spec:
-  type: NodePort
+  type: LoadBalancer
+  # can use same ip address as another loadbalancer on another port
+  loadBalancerIP: XXX.XXX.XXX.XXX
   ports:
     - name: teeworlds
       port: 8303
-      targetPort: teeworlds
+      targetPort: 8303
+      protocol: UDP
   selector:
-    app: teeworlds
-    mod: openfng
+    app: teeworlds-openfng
+
+
